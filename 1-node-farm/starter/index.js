@@ -28,30 +28,53 @@ const url = require('url');
 ///////////////////////////
 // Server
 
+// Carregamos esses arquivos antes do server pois eles são carregados apenas uma vez e não a cada requisição 
+const tempOverview = fs.readFileSync(`${__dirname}/templates/template-overview.html`, 'utf-8');
+const tempProduct = fs.readFileSync(`${__dirname}/templates/template-product.html`, 'utf-8');
+const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`, 'utf-8');
+
+const replaceCardsElements = (temp, el) => {
+    let output = temp.replace(/{%PRODUCTNAME%}/g, el.productName);
+    output = output.replace(/{%IMAGE%}/g, el.image);
+    output = output.replace(/{%FROM%}/g, el.from);
+    output = output.replace(/{%NUTRIENTS%}/g, el.nutrients);
+    output = output.replace(/{%QUANTITY%}/g, el.quantity);
+    output = output.replace(/{%PRICE%}/g, el.price);
+    output = output.replace(/{%DESCRIPTION%}/g, el.description);
+    output = output.replace(/{%ID%}/g, el.id);
+    return output;
+}
+
+const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
+const dataObj = JSON.parse(data);
+
 const server = http.createServer((req, res) => {
     const pathname = req.url;
 
+
+    // Overview page
     if(pathname === '/' || pathname === '/overview') {
-        res.end('this is Overview');
+        const cardsHtml = dataObj.map(el => replaceCardsElements(tempCard, el)).join('');
+        const output = tempOverview.replace(/{%PRODUCT_CARDS%}/g, cardsHtml);
+
+        res.writeHead(200, {
+            'Content-type': 'text/html'
+        });
+        res.end(output);
+
+    // Product page
     } else if(pathname === '/product') {
         res.end('this is Product');
-    } else if(pathname === '/api') {
 
-        fs.readFile(`${__dirname}/dev-data/data.json`, 'utf-8', (err, data) => {
-            if (err) {
-                res.writeHead(500, {
-                    'Content-type': 'application/json'
-                });
-                res.end(JSON.stringify({ message: 'Error reading file' }));
-            } else {
-                res.writeHead(200, {
-                    'Content-type': 'application/json'
-                });
-                res.end(data);
-            }
+    // API
+    } else if(pathname === '/api') {
+        res.writeHead(200, {
+            'Content-type': 'application/json'
         });
+        res.end(data);
     }
 
+    // Not found
     else {
         res.writeHead(404, {
             'Content-type': 'text/html',
