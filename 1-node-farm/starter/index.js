@@ -35,13 +35,31 @@ const server = http.createServer((req, res) => {
         res.end('this is Overview');
     } else if(pathname === '/product') {
         res.end('this is Product');
-    } else {
+    } else if(pathname === '/api') {
+
+        fs.readFile(`${__dirname}/dev-data/data.json`, 'utf-8', (err, data) => {
+            if (err) {
+                res.writeHead(500, {
+                    'Content-type': 'application/json'
+                });
+                res.end(JSON.stringify({ message: 'Error reading file' }));
+            } else {
+                res.writeHead(200, {
+                    'Content-type': 'application/json'
+                });
+                res.end(data);
+            }
+        });
+    }
+
+    else {
         res.writeHead(404, {
             'Content-type': 'text/html',
             'my-own-header': 'hello-world'
         });
         res.end('<h1>Page not found</h1>');
     }
+
 })
 
 server.listen(8000, '127.0.0.1', () => {
